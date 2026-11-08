@@ -1,11 +1,11 @@
 // Stable offline cache: ice-cream art is downloaded once per published release.
-const CORE='asobi-v39',ICE='asobi-ice-v39';
+const CORE='asobi-v40',ICE='asobi-ice-v40';
 const CORE_ASSETS=['./','./index.html','./style.css?v=38','./app.js?v=38','./extras.js?v=38','./manifest.webmanifest','./icon-192.png','./icon-512.png','./home-park.webp','./home-park-header.webp'];
 const ICE_ASSETS=['./softcream.html',
  ...Array.from({length:5},(_,i)=>'./cone-raster-'+i+'-back.webp'),
  ...Array.from({length:5},(_,i)=>'./cone-raster-'+i+'-front.webp'),
  './cone-waffle-cup-raster-back.webp','./cone-waffle-cup-raster-front.webp',
- ...['round','classic','fine'].flatMap(x=>['./soft-'+x+'.webp','./soft-'+x+'.png']),
+ ...['round','classic','fine'].map(x=>'./soft-'+x+'.webp'),
  './sauce-shell-neutral.svg','./sauce-strawberry.png','./sprinkles-rainbow.webp',
  './topping-birch-high.svg','./topping-biscuit.png','./topping-strawberry-cut.png','./topping-strawberry-whole.png','./topping-mint.webp','./topping-blueberry.png','./topping-raspberry.png',
  ...Array.from({length:6},(_,i)=>'./topping-macaron-'+i+'.png')
