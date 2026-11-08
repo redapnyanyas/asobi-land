@@ -1,8 +1,40 @@
-const CACHE='asobi-v38';
-const ASSETS=['./','./index.html','./style.css?v=38','./app.js?v=38','./extras.js?v=38','./manifest.webmanifest','./icon-192.png','./icon-512.png','./home-park.webp','./home-park-header.webp','./softcream.html','./kakigori.html','./katahame.html','./soft-vector-0-0.svg','./soft-vector-0-1.svg','./soft-vector-0-2.svg','./soft-vector-0-3.svg','./soft-vector-0-4.svg','./soft-vector-0-5.svg','./soft-vector-0-6.svg','./soft-vector-0-7.svg','./soft-vector-0-8.svg','./soft-vector-1-0.svg','./soft-vector-1-1.svg','./soft-vector-1-2.svg','./soft-vector-1-3.svg','./soft-vector-1-4.svg','./soft-vector-1-5.svg','./soft-vector-1-6.svg','./soft-vector-1-7.svg','./soft-vector-1-8.svg','./soft-vector-2-0.svg','./soft-vector-2-1.svg','./soft-vector-2-2.svg','./soft-vector-2-3.svg','./soft-vector-2-4.svg','./soft-vector-2-5.svg','./soft-vector-2-6.svg','./soft-vector-2-7.svg','./soft-vector-2-8.svg'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('asobi-v')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('message',e=>{if(e.data?.type==='SKIP_WAITING')self.skipWaiting()});
-self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL(r.url).origin!==self.location.origin)return;
-if(r.mode==='navigate'||new URL(r.url).pathname.endsWith('/sw.js')){e.respondWith(fetch(r,{cache:'no-store'}).then(response=>{if(response.ok){const copy=response.clone();caches.open(CACHE).then(c=>c.put(r,copy)).catch(()=>{});}return response;}).catch(()=>caches.match(r)));return;}
-e.respondWith(caches.match(r).then(c=>c||fetch(r)));});
+// Stable offline cache: ice-cream art is downloaded once per published release.
+const CORE='asobi-v39',ICE='asobi-ice-v39';
+const CORE_ASSETS=['./','./index.html','./style.css?v=38','./app.js?v=38','./extras.js?v=38','./manifest.webmanifest','./icon-192.png','./icon-512.png','./home-park.webp','./home-park-header.webp'];
+const ICE_ASSETS=['./softcream.html',
+ ...Array.from({length:5},(_,i)=>'./cone-raster-'+i+'-back.webp'),
+ ...Array.from({length:5},(_,i)=>'./cone-raster-'+i+'-front.webp'),
+ './cone-waffle-cup-raster-back.webp','./cone-waffle-cup-raster-front.webp',
+ ...['round','classic','fine'].flatMap(x=>['./soft-'+x+'.webp','./soft-'+x+'.png']),
+ './sauce-shell-neutral.svg','./sauce-strawberry.png','./sprinkles-rainbow.webp',
+ './topping-birch-high.svg','./topping-biscuit.png','./topping-strawberry-cut.png','./topping-strawberry-whole.png','./topping-mint.webp','./topping-blueberry.png','./topping-raspberry.png',
+ ...Array.from({length:6},(_,i)=>'./topping-macaron-'+i+'.png')
+];
+self.addEventListener('install',event=>event.waitUntil(
+ Promise.all([caches.open(CORE).then(c=>c.addAll(CORE_ASSETS)),caches.open(ICE).then(c=>c.addAll(ICE_ASSETS))]).then(()=>self.skipWaiting())
+));
+self.addEventListener('activate',event=>event.waitUntil(
+ caches.keys().then(keys=>Promise.all(keys.filter(k=>(k.startsWith('asobi-v')&&k!==CORE)||(k.startsWith('asobi-ice-v')&&k!==ICE)).map(k=>caches.delete(k)))).then(()=>self.clients.claim())
+));
+self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting()});
+self.addEventListener('fetch',event=>{
+ const req=event.request;if(req.method!=='GET')return;const url=new URL(req.url);if(url.origin!==self.location.origin)return;
+ const path=url.pathname;const isSoft=path.endsWith('/softcream.html');
+ const isIceAsset=ICE_ASSETS.some(p=>path.endsWith(p.slice(1)));
+ if(isSoft||isIceAsset){
+  event.respondWith(caches.match(req,{ignoreSearch:true}).then(hit=>hit||fetch(req).then(response=>{
+   if(response.ok){const copy=response.clone();caches.open(ICE).then(c=>c.put(req,copy)).catch(()=>{});}
+   return response;
+  })));
+  return;
+ }
+ if(req.mode==='navigate'||path.endsWith('/sw.js')){
+  event.respondWith(fetch(req,{cache:'no-store'}).then(response=>{
+   if(response.ok){const copy=response.clone();caches.open(CORE).then(c=>c.put(req,copy)).catch(()=>{});}return response;
+  }).catch(()=>caches.match(req,{ignoreSearch:true})));
+  return;
+ }
+ event.respondWith(caches.match(req,{ignoreSearch:true}).then(hit=>hit||fetch(req).then(response=>{
+  if(response.ok){const copy=response.clone();caches.open(CORE).then(c=>c.put(req,copy)).catch(()=>{});}return response;
+ })));
+});
