@@ -1,6 +1,6 @@
 // Stable offline cache: ice-cream art is downloaded once per published release.
-const CORE='asobi-v45',ICE='asobi-ice-v45';
-const CORE_ASSETS=['./','./index.html','./style.css?v=40','./app.js?v=40','./extras.js?v=42','./manifest.webmanifest','./icon-192.png','./icon-512.png','./home-park.webp','./home-park-header.webp'];
+const CORE='asobi-v46',ICE='asobi-ice-v46';
+const CORE_ASSETS=['./','./index.html','./style.css?v=40','./app.js?v=40','./extras.js?v=43','./manifest.webmanifest','./icon-192.png','./icon-512.png','./home-park.webp','./home-park-header.webp'];
 const ICE_ASSETS=['./softcream.html',
  ...Array.from({length:5},(_,i)=>'./cone-raster-'+i+'-back.webp'),
  ...Array.from({length:5},(_,i)=>'./cone-raster-'+i+'-front.webp'),
