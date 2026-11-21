@@ -245,3 +245,15 @@ main>#coloring:not(.hidden){display:block!important;overflow:auto!important}
 #game .tray{min-width:0;min-height:0;grid-auto-flow:row;grid-auto-rows:minmax(0,1fr);overflow:hidden;align-content:stretch;justify-items:stretch;align-items:stretch}
 #game .tray .slot{position:relative;min-width:0;min-height:0;width:100%;height:100%;overflow:hidden;container-type:size;display:block}
 #game .tray .piece{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100cqw,100cqh);height:min(100cqw,100cqh);max-width:100%;max-height:100%;flex:none;margin:0}
+
+/* Kana quiz: keep the existing keyboard usable on compact iPad screens. */
+#kana .kana-switch{gap:clamp(5px,1.4vw,14px);margin:5px 0}
+#kanaQuiz{background:#fff0a4;color:#8a4219;border:2px solid #fff;padding:6px 12px;white-space:nowrap}
+#kanaQuiz.chosen{background:#f26d43;color:#fff}
+#kana .kana-quiz-prompt{flex:0 0 auto;min-height:43px;display:flex;align-items:center;justify-content:center;gap:12px;border-radius:12px;background:#fff6d4;padding:4px 10px;margin:3px 0 6px}
+#kana .kana-quiz-prompt strong{font-size:clamp(14px,2.5vw,24px);color:#a63d25}
+#kana .kana-quiz-prompt button{padding:5px 9px;font-size:clamp(11px,1.7vw,15px);border-radius:9px}
+#kanaQuizScore{font-size:clamp(10px,1.4vw,14px);white-space:nowrap;font-weight:800}
+#kana .kana-grid button.quiz-correct{background:#8bdc9c!important;color:#155b2f!important;outline:3px solid #259c49}
+#kana .kana-grid button.quiz-wrong{background:#ffb0a9!important;outline:3px solid #df5047}
+@media(max-width:650px){#kana .kana-switch{flex-wrap:wrap;justify-content:center}#kana .kana-quiz-prompt{gap:5px;padding:3px}#kanaQuiz{padding:5px 7px}}
