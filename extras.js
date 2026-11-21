@@ -85,6 +85,7 @@ const basicRows=['あかさたなはまやらわ','いきしちにひみっり�
 const voicedRows=['がざだばぱ','ぎじぢびぴ','ぐずづぶぷ','げぜでべぺ','ごぞどぼぽ'];
 const combos=['きゃ','きゅ','きょ','しゃ','しゅ','しょ','ちゃ','ちゅ','ちょ','にゃ','にゅ','にょ','ひゃ','ひゅ','ひょ','みゃ','みゅ','みょ','りゃ','りゅ','りょ','ぎゃ','ぎゅ','ぎょ','じゃ','じゅ','じょ','びゃ','びゅ','びょ','ぴゃ','ぴゅ','ぴょ','ぢゃ','ぢゅ','ぢょ'];
 let kanaTab='basic',katakana=false,kanaUnits=[],kanaRecording=false,recognition=null,kanaMicTimer=null,kanaMicFailures=0,kanaMicMessage='';
+let kanaQuiz=false,kanaQuizAnswer=null,kanaQuizPrevious=null,kanaQuizCount=0,kanaQuizPending=false,kanaQuizTimer=null;
 const toKata=s=>s.replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+96));const toHira=s=>s.replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-96));
 function kanaValue(s){return katakana?toKata(s):toHira(s)}
 function kanaString(){return kanaUnits.map(kanaValue).join('')}
@@ -92,13 +93,59 @@ const kanaVoicedMap={'か':'が','き':'ぎ','く':'ぐ','け':'げ','こ':'ご'
 const kanaSemiMap={'は':'ぱ','ひ':'ぴ','ふ':'ぷ','へ':'ぺ','ほ':'ぽ'};
 const kanaUnvoiceMap=Object.fromEntries(Object.entries(kanaVoicedMap).map(([k,v])=>[v,k]));
 const kanaUnsemiMap=Object.fromEntries(Object.entries(kanaSemiMap).map(([k,v])=>[v,k]));
-function kanaMark(mark){if(kanaRecording||!kanaUnits.length)return;const last=kanaUnits[kanaUnits.length-1],chars=Array.from(last),tail=chars.pop();if(!tail)return;let result;if(mark==='゛'){result=kanaVoicedMap[tail]||kanaUnvoiceMap[tail]||kanaVoicedMap[kanaUnsemiMap[tail]];}else{result=kanaSemiMap[tail]||kanaUnsemiMap[tail]||kanaSemiMap[kanaUnvoiceMap[tail]];}if(!result)return;chars.push(result);kanaUnits[kanaUnits.length-1]=chars.join('');kanaRefresh();say(kanaValue(result))}
-function kanaRefresh(){const s=kanaString();$('kanaText').textContent=s;$('kanaSmall').textContent=kanaValue('っ');$('kanaScript').textContent=katakana?'カタカナ':'ひらがな';$('kanaSound').textContent=speakEnabled?'🔊':'🔇';$('kanaStatus').textContent=(Array.from(s).length>=20?'20もじまでだよ':'')+(kanaRecording?' 🎤 ききとりちゅう':(kanaMicMessage?' '+kanaMicMessage:''));document.querySelectorAll('#kanaGrid button:not(.kana-mark),#kanaSmall,#kanaLong').forEach(b=>b.disabled=kanaRecording||Array.from(s).length>=20);document.querySelectorAll('.kana-mark').forEach(b=>b.disabled=kanaRecording||!kanaUnits.length)}
-function kanaAdd(s){if(kanaRecording)return;const remaining=20-Array.from(kanaString()).length;if(remaining<=0)return;const part=Array.from(s).slice(0,remaining).join('');if(!part)return;kanaUnits.push(toHira(part));kanaRefresh();say(kanaValue(part))}
-function renderKana(){const root=$('kanaGrid');root.replaceChildren();const values=kanaTab==='basic'?basicRows.join('').split(''):kanaTab==='voiced'?voicedRows.map(r=>r.padEnd(10,'　')).join('').split(''):combos;values.forEach(ch=>{const b=document.createElement('button');if(ch==='　'){b.disabled=true;b.textContent='';}else{b.textContent=kanaValue(ch);if(ch==='っ'||ch==='ー'||ch==='゛'||ch==='゜')b.classList.add('kana-special');if(ch==='゛'||ch==='゜'){b.classList.add('kana-mark');b.onclick=()=>kanaMark(ch)}else b.onclick=()=>kanaAdd(ch)}root.append(b)});document.querySelectorAll('[data-kana-tab]').forEach(b=>b.classList.toggle('chosen',b.dataset.kanaTab===kanaTab));kanaRefresh()}
-document.querySelectorAll('[data-kana-tab]').forEach(b=>b.onclick=()=>{kanaTab=b.dataset.kanaTab;renderKana()});
+function kanaMark(mark){if(kanaRecording||kanaQuiz||!kanaUnits.length)return;const last=kanaUnits[kanaUnits.length-1],chars=Array.from(last),tail=chars.pop();if(!tail)return;let result;if(mark==='゛'){result=kanaVoicedMap[tail]||kanaUnvoiceMap[tail]||kanaVoicedMap[kanaUnsemiMap[tail]];}else{result=kanaSemiMap[tail]||kanaUnsemiMap[tail]||kanaSemiMap[kanaUnvoiceMap[tail]];}if(!result)return;chars.push(result);kanaUnits[kanaUnits.length-1]=chars.join('');kanaRefresh();say(kanaValue(result))}
+function kanaQuizChoices(){
+ return Array.from(document.querySelectorAll('#kanaGrid button[data-kana-answer]')).filter(b=>!b.disabled).map(b=>b.dataset.kanaAnswer);
+}
+function kanaQuizAsk(){
+ if(!kanaQuiz||screen!=='kana')return;
+ clearTimeout(kanaQuizTimer);kanaQuizTimer=null;kanaQuizPending=false;
+ const choices=kanaQuizChoices();
+ if(!choices.length)return;
+ const options=choices.filter(ch=>ch!==kanaQuizPrevious);
+ kanaQuizAnswer=options[Math.floor(Math.random()*options.length)]||choices[0];
+ kanaQuizPrevious=kanaQuizAnswer;
+ $('kanaQuizQuestion').textContent='「'+kanaValue(kanaQuizAnswer)+'」は どこ？';
+ $('kanaQuizScore').textContent='せいかい '+kanaQuizCount+'こ';
+ document.querySelectorAll('#kanaGrid button').forEach(b=>b.classList.remove('quiz-correct','quiz-wrong'));
+ say(kanaValue(kanaQuizAnswer)+'はどこ？');
+}
+function kanaQuizAnswerTap(ch,button){
+ if(!kanaQuiz||kanaQuizPending)return;
+ if(ch!==kanaQuizAnswer){
+  button.classList.add('quiz-wrong');$('kanaQuizQuestion').textContent='もういっかい！';
+  say('もういっかい');setTimeout(()=>button.classList.remove('quiz-wrong'),500);return;
+ }
+ kanaQuizPending=true;kanaQuizCount++;
+ button.classList.add('quiz-correct');
+ $('kanaQuizQuestion').textContent='せいかい！ よくできたね！';
+ $('kanaQuizScore').textContent='せいかい '+kanaQuizCount+'こ';
+ say('せいかい！ よくできたね！');
+ kanaQuizTimer=setTimeout(kanaQuizAsk,1800);
+}
+function kanaQuizStop(){
+ clearTimeout(kanaQuizTimer);kanaQuizTimer=null;
+ kanaQuiz=false;kanaQuizPending=false;kanaQuizAnswer=null;
+ $('kanaQuiz').textContent='🎯 クイズ';$('kanaQuiz').classList.remove('chosen');
+ $('kanaQuizPrompt').classList.add('hidden');
+ try{speechQueueToken++;speechSynthesis.cancel()}catch(e){}
+ renderKana();
+}
+$('kanaQuiz').onclick=()=>{
+ if(kanaQuiz){kanaQuizStop();return}
+ if(kanaRecording)stopKanaMic();
+ kanaQuiz=true;kanaQuizCount=0;kanaQuizPrevious=null;kanaQuizPending=false;
+ $('kanaQuiz').textContent='✕ クイズをやめる';$('kanaQuiz').classList.add('chosen');
+ $('kanaQuizPrompt').classList.remove('hidden');
+ renderKana();kanaQuizAsk();
+};
+$('kanaQuizRepeat').onclick=()=>{if(kanaQuiz&&kanaQuizAnswer&&!kanaQuizPending)say(kanaValue(kanaQuizAnswer)+'はどこ？')};
+function kanaRefresh(){const s=kanaString();$('kanaText').textContent=s;$('kanaSmall').textContent=kanaValue('っ');$('kanaScript').textContent=katakana?'カタカナ':'ひらがな';$('kanaSound').textContent=speakEnabled?'🔊':'🔇';$('kanaStatus').textContent=(Array.from(s).length>=20?'20もじまでだよ':'')+(kanaRecording?' 🎤 ききとりちゅう':(kanaMicMessage?' '+kanaMicMessage:''));document.querySelectorAll('#kanaGrid button:not(.kana-mark),#kanaSmall,#kanaLong').forEach(b=>b.disabled=kanaRecording||(!kanaQuiz&&Array.from(s).length>=20));document.querySelectorAll('.kana-mark').forEach(b=>b.disabled=kanaRecording||!kanaUnits.length)}
+function kanaAdd(s){if(kanaRecording||kanaQuiz)return;const remaining=20-Array.from(kanaString()).length;if(remaining<=0)return;const part=Array.from(s).slice(0,remaining).join('');if(!part)return;kanaUnits.push(toHira(part));kanaRefresh();say(kanaValue(part))}
+function renderKana(){const root=$('kanaGrid');root.replaceChildren();const values=kanaTab==='basic'?basicRows.join('').split(''):kanaTab==='voiced'?voicedRows.map(r=>r.padEnd(10,'　')).join('').split(''):combos;values.forEach(ch=>{const b=document.createElement('button');if(ch==='　'){b.disabled=true;b.textContent='';}else{b.textContent=kanaValue(ch);if(ch==='っ'||ch==='ー'||ch==='゛'||ch==='゜')b.classList.add('kana-special');if(ch==='゛'||ch==='゜'){b.classList.add('kana-mark');b.onclick=()=>kanaMark(ch)}else {b.dataset.kanaAnswer=ch;b.onclick=()=>kanaQuiz?kanaQuizAnswerTap(ch,b):kanaAdd(ch)}}root.append(b)});document.querySelectorAll('[data-kana-tab]').forEach(b=>b.classList.toggle('chosen',b.dataset.kanaTab===kanaTab));kanaRefresh()}
+document.querySelectorAll('[data-kana-tab]').forEach(b=>b.onclick=()=>{kanaTab=b.dataset.kanaTab;renderKana();if(kanaQuiz)kanaQuizAsk()});
 
-$('kanaScript').onclick=()=>{katakana=!katakana;renderKana()};$('kanaSmall').onclick=()=>kanaAdd('っ');$('kanaLong').onclick=()=>kanaAdd('ー');$('kanaDelete').onclick=()=>{kanaUnits.pop();kanaRefresh()};$('kanaClear').onclick=()=>{kanaUnits=[];kanaRefresh()};$('kanaPlay').onclick=()=>say(kanaString());$('kanaSound').onclick=()=>{speakEnabled=!speakEnabled;if(!speakEnabled)speechSynthesis?.cancel();kanaRefresh()};
+$('kanaScript').onclick=()=>{katakana=!katakana;renderKana();if(kanaQuiz)kanaQuizAsk()};$('kanaSmall').onclick=()=>kanaAdd('っ');$('kanaLong').onclick=()=>kanaAdd('ー');$('kanaDelete').onclick=()=>{kanaUnits.pop();kanaRefresh()};$('kanaClear').onclick=()=>{kanaUnits=[];kanaRefresh()};$('kanaPlay').onclick=()=>say(kanaString());$('kanaSound').onclick=()=>{speakEnabled=!speakEnabled;if(!speakEnabled)speechSynthesis?.cancel();kanaRefresh()};
 function stopKanaMic(){
  kanaRecording=false;clearTimeout(kanaMicTimer);kanaMicTimer=null;
  const old=recognition;recognition=null;
@@ -144,6 +191,7 @@ function startKanaMicSession(){
  try{rec.start()}catch(e){kanaMicMessage='マイクを開始できません';stopKanaMic()}
 }
 $('kanaMic').onclick=()=>{
+ if(kanaQuiz)kanaQuizStop();
  if(kanaRecording){kanaMicMessage='';stopKanaMic();return}
  if(!(window.SpeechRecognition||window.webkitSpeechRecognition)){kanaMicMessage='このブラウザは音声入力に対応していません';kanaRefresh();return}
  try{speechSynthesis.cancel();speechQueueToken++}catch(e){}
@@ -179,7 +227,7 @@ function traceChime(good){try{const A=window.AudioContext||window.webkitAudioCon
 $('traceDone').onclick=traceJudge;
 $('traceReset').onclick=()=>{ix.clearRect(0,0,600,600);traceProgress=0;traceDrawBase()};$('traceNext').onclick=()=>{traceIndex=(traceIndex+1)%traceOptions.length;traceStart()};
 /* Navigation safety: unsaved paint is discarded only after confirmation. */
-const oldBack=goBack;goBack=function(){if(screen==='coloring'&&!confirm('ぬりえを おわる？ ぬったいろは きえるよ'))return;if(screen==='kana'){kanaUnits=[];stopKanaMic();try{speechSynthesis.cancel()}catch(e){}}if(screen==='tracing'&&traceLevel<=3){show('traceMenu');return}oldBack()};
+const oldBack=goBack;goBack=function(){if(screen==='coloring'&&!confirm('ぬりえを おわる？ ぬったいろは きえるよ'))return;if(screen==='kana'){if(kanaQuiz)kanaQuizStop();kanaUnits=[];stopKanaMic();try{speechSynthesis.cancel()}catch(e){}}if(screen==='tracing'&&traceLevel<=3){show('traceMenu');return}oldBack()};
 $('back').onclick=()=>goBack();
 window.addEventListener('pagehide',()=>{kanaUnits=[];stopKanaMic()});
 renderColors();exOpen().then(d=>{exdb=d;refreshExtra()}).catch(()=>{renderColors();console.warn('画像登録は利用できませんが、ぬりえは遊べます')});
