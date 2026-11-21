@@ -84,7 +84,7 @@ $('paintSave').onclick=async()=>{
 const basicRows=['あかさたなはまやらわ','いきしちにひみっりを','うくすつぬふむゆる゛','えけせてねへめーれ゜','おこそとのほもよろん'];
 const voicedRows=['がざだばぱ','ぎじぢびぴ','ぐずづぶぷ','げぜでべぺ','ごぞどぼぽ'];
 const combos=['きゃ','きゅ','きょ','しゃ','しゅ','しょ','ちゃ','ちゅ','ちょ','にゃ','にゅ','にょ','ひゃ','ひゅ','ひょ','みゃ','みゅ','みょ','りゃ','りゅ','りょ','ぎゃ','ぎゅ','ぎょ','じゃ','じゅ','じょ','びゃ','びゅ','びょ','ぴゃ','ぴゅ','ぴょ','ぢゃ','ぢゅ','ぢょ'];
-let kanaTab='basic',katakana=false,kanaUnits=[],kanaRecording=false,recognition=null;
+let kanaTab='basic',katakana=false,kanaUnits=[],kanaRecording=false,recognition=null,kanaMicTimer=null,kanaMicFailures=0,kanaMicMessage='';
 const toKata=s=>s.replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+96));const toHira=s=>s.replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-96));
 function kanaValue(s){return katakana?toKata(s):toHira(s)}
 function kanaString(){return kanaUnits.map(kanaValue).join('')}
@@ -93,13 +93,62 @@ const kanaSemiMap={'は':'ぱ','ひ':'ぴ','ふ':'ぷ','へ':'ぺ','ほ':'ぽ'};
 const kanaUnvoiceMap=Object.fromEntries(Object.entries(kanaVoicedMap).map(([k,v])=>[v,k]));
 const kanaUnsemiMap=Object.fromEntries(Object.entries(kanaSemiMap).map(([k,v])=>[v,k]));
 function kanaMark(mark){if(kanaRecording||!kanaUnits.length)return;const last=kanaUnits[kanaUnits.length-1],chars=Array.from(last),tail=chars.pop();if(!tail)return;let result;if(mark==='゛'){result=kanaVoicedMap[tail]||kanaUnvoiceMap[tail]||kanaVoicedMap[kanaUnsemiMap[tail]];}else{result=kanaSemiMap[tail]||kanaUnsemiMap[tail]||kanaSemiMap[kanaUnvoiceMap[tail]];}if(!result)return;chars.push(result);kanaUnits[kanaUnits.length-1]=chars.join('');kanaRefresh();say(kanaValue(result))}
-function kanaRefresh(){const s=kanaString();$('kanaText').textContent=s;$('kanaSmall').textContent=kanaValue('っ');$('kanaScript').textContent=katakana?'カタカナ':'ひらがな';$('kanaSound').textContent=speakEnabled?'🔊':'🔇';$('kanaStatus').textContent=(Array.from(s).length>=20?'20もじまでだよ':'')+(kanaRecording?' 🎤 ききとりちゅう':'');document.querySelectorAll('#kanaGrid button:not(.kana-mark),#kanaSmall,#kanaLong').forEach(b=>b.disabled=kanaRecording||Array.from(s).length>=20);document.querySelectorAll('.kana-mark').forEach(b=>b.disabled=kanaRecording||!kanaUnits.length)}
+function kanaRefresh(){const s=kanaString();$('kanaText').textContent=s;$('kanaSmall').textContent=kanaValue('っ');$('kanaScript').textContent=katakana?'カタカナ':'ひらがな';$('kanaSound').textContent=speakEnabled?'🔊':'🔇';$('kanaStatus').textContent=(Array.from(s).length>=20?'20もじまでだよ':'')+(kanaRecording?' 🎤 ききとりちゅう':(kanaMicMessage?' '+kanaMicMessage:''));document.querySelectorAll('#kanaGrid button:not(.kana-mark),#kanaSmall,#kanaLong').forEach(b=>b.disabled=kanaRecording||Array.from(s).length>=20);document.querySelectorAll('.kana-mark').forEach(b=>b.disabled=kanaRecording||!kanaUnits.length)}
 function kanaAdd(s){if(kanaRecording)return;const remaining=20-Array.from(kanaString()).length;if(remaining<=0)return;const part=Array.from(s).slice(0,remaining).join('');if(!part)return;kanaUnits.push(toHira(part));kanaRefresh();say(kanaValue(part))}
 function renderKana(){const root=$('kanaGrid');root.replaceChildren();const values=kanaTab==='basic'?basicRows.join('').split(''):kanaTab==='voiced'?voicedRows.map(r=>r.padEnd(10,'　')).join('').split(''):combos;values.forEach(ch=>{const b=document.createElement('button');if(ch==='　'){b.disabled=true;b.textContent='';}else{b.textContent=kanaValue(ch);if(ch==='っ'||ch==='ー'||ch==='゛'||ch==='゜')b.classList.add('kana-special');if(ch==='゛'||ch==='゜'){b.classList.add('kana-mark');b.onclick=()=>kanaMark(ch)}else b.onclick=()=>kanaAdd(ch)}root.append(b)});document.querySelectorAll('[data-kana-tab]').forEach(b=>b.classList.toggle('chosen',b.dataset.kanaTab===kanaTab));kanaRefresh()}
 document.querySelectorAll('[data-kana-tab]').forEach(b=>b.onclick=()=>{kanaTab=b.dataset.kanaTab;renderKana()});
 
 $('kanaScript').onclick=()=>{katakana=!katakana;renderKana()};$('kanaSmall').onclick=()=>kanaAdd('っ');$('kanaLong').onclick=()=>kanaAdd('ー');$('kanaDelete').onclick=()=>{kanaUnits.pop();kanaRefresh()};$('kanaClear').onclick=()=>{kanaUnits=[];kanaRefresh()};$('kanaPlay').onclick=()=>say(kanaString());$('kanaSound').onclick=()=>{speakEnabled=!speakEnabled;if(!speakEnabled)speechSynthesis?.cancel();kanaRefresh()};
-$('kanaMic').onclick=()=>{if(kanaRecording){recognition?.stop();kanaRecording=false;kanaRefresh();return}const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('このiPadのブラウザは音声入力に対応していません');return}recognition=new SR();recognition.lang='ja-JP';recognition.interimResults=false;recognition.continuous=true;recognition.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal){const txt=e.results[i][0].transcript;const remaining=20-Array.from(kanaString()).length;const part=Array.from(txt).slice(0,remaining).join('');if(part)kanaUnits.push(toHira(part));kanaRefresh();if(remaining<=Array.from(txt).length)recognition.stop()}}};recognition.onerror=e=>{$('kanaStatus').textContent='マイクが つかえません: '+e.error};recognition.onend=()=>{kanaRecording=false;kanaRefresh()};try{recognition.start();kanaRecording=true;kanaRefresh()}catch(e){alert('マイクを開始できません')}};
+function stopKanaMic(){
+ kanaRecording=false;clearTimeout(kanaMicTimer);kanaMicTimer=null;
+ const old=recognition;recognition=null;
+ if(old){old.onend=null;old.onerror=null;old.onresult=null;try{old.stop()}catch(e){}}
+ kanaRefresh();
+}
+function startKanaMicSession(){
+ if(!kanaRecording||screen!=='kana')return;
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){kanaMicMessage='このブラウザは音声入力に対応していません';stopKanaMic();return}
+ const rec=new SR();recognition=rec;rec.lang='ja-JP';rec.interimResults=false;
+ // Safari may terminate continuous sessions immediately; restart on normal end instead.
+ rec.continuous=false;
+ let gotResult=false,hardError=false;
+ rec.onresult=e=>{
+  if(rec!==recognition)return;
+  for(let i=e.resultIndex;i<e.results.length;i++){
+   if(!e.results[i].isFinal)continue;
+   const txt=e.results[i][0].transcript;
+   const remaining=20-Array.from(kanaString()).length;
+   const part=Array.from(txt).slice(0,remaining).join('');
+   if(part){kanaUnits.push(toHira(part));gotResult=true;kanaMicFailures=0;kanaMicMessage='';kanaRefresh()}
+   if(remaining<=Array.from(txt).length){stopKanaMic();return}
+  }
+ };
+ rec.onerror=e=>{
+  if(rec!==recognition)return;
+  const error=e.error||'unknown';
+  if(['not-allowed','service-not-allowed','audio-capture','language-not-supported'].includes(error)){
+   hardError=true;
+   kanaMicMessage=error==='not-allowed'||error==='service-not-allowed'?'マイクの使用を許可してください':error==='audio-capture'?'マイクが見つかりません':'音声認識に対応していません';
+  }else if(error==='network'){hardError=true;kanaMicMessage='音声認識の通信エラーです'}
+ };
+ rec.onend=()=>{
+  if(rec!==recognition)return;
+  recognition=null;
+  if(!kanaRecording)return;
+  if(hardError){stopKanaMic();return}
+  if(!gotResult)kanaMicFailures++;else kanaMicFailures=0;
+  if(kanaMicFailures>=4){kanaMicMessage='音声入力が終了しました。もう一度マイクを押してください';stopKanaMic();return}
+  kanaMicTimer=setTimeout(()=>{kanaMicTimer=null;startKanaMicSession()},450);
+ };
+ try{rec.start()}catch(e){kanaMicMessage='マイクを開始できません';stopKanaMic()}
+}
+$('kanaMic').onclick=()=>{
+ if(kanaRecording){kanaMicMessage='';stopKanaMic();return}
+ if(!(window.SpeechRecognition||window.webkitSpeechRecognition)){kanaMicMessage='このブラウザは音声入力に対応していません';kanaRefresh();return}
+ try{speechSynthesis.cancel();speechQueueToken++}catch(e){}
+ kanaMicMessage='';kanaMicFailures=0;kanaRecording=true;kanaRefresh();startKanaMicSession();
+};
 /* Trace levels. Draw only on Apple Pencil pointer events. */
 const traceCanvas=$('traceCanvas'),tx=traceCanvas.getContext('2d');const traceInk=document.createElement('canvas');traceInk.width=traceInk.height=600;const ix=traceInk.getContext('2d',{willReadFrequently:true});const traceTarget=document.createElement('canvas');traceTarget.width=traceTarget.height=600;const mx=traceTarget.getContext('2d',{willReadFrequently:true});let traceLevel=1,traceIndex=0,traceOptions=[],traceActive=false,tracePrev=null,tracePath=null,traceProgress=0;
 const traceDefs={1:[['まっすぐ','M 95 300 L 505 300'],['たて','M 300 90 L 300 510'],['ジグザグ','M 90 150 L 210 430 L 330 150 L 450 430']],2:[['なみ','M 70 320 Q 160 110 250 320 T 430 320 T 530 320'],['カーブ','M 110 480 Q 50 90 490 125'],['ぐるぐる','M 300 300 C 120 110 80 460 300 470 C 540 480 550 140 310 125']],3:[['まる','M 300 110 A 190 190 0 1 1 299 110'],['さんかく','M 300 100 L 510 470 L 90 470 Z'],['しかく','M 125 125 L 475 125 L 475 475 L 125 475 Z'],['ほし','M 300 90 L 360 250 L 530 250 L 390 355 L 450 525 L 300 420 L 150 525 L 210 355 L 70 250 L 240 250 Z'],['ハート','M 300 480 C 130 330 60 240 155 150 C 220 90 280 140 300 190 C 340 90 440 100 480 180 C 540 290 400 410 300 480 Z']]};
@@ -130,9 +179,9 @@ function traceChime(good){try{const A=window.AudioContext||window.webkitAudioCon
 $('traceDone').onclick=traceJudge;
 $('traceReset').onclick=()=>{ix.clearRect(0,0,600,600);traceProgress=0;traceDrawBase()};$('traceNext').onclick=()=>{traceIndex=(traceIndex+1)%traceOptions.length;traceStart()};
 /* Navigation safety: unsaved paint is discarded only after confirmation. */
-const oldBack=goBack;goBack=function(){if(screen==='coloring'&&!confirm('ぬりえを おわる？ ぬったいろは きえるよ'))return;if(screen==='kana'){kanaUnits=[];recognition?.stop();kanaRecording=false;try{speechSynthesis.cancel()}catch(e){}}if(screen==='tracing'&&traceLevel<=3){show('traceMenu');return}oldBack()};
+const oldBack=goBack;goBack=function(){if(screen==='coloring'&&!confirm('ぬりえを おわる？ ぬったいろは きえるよ'))return;if(screen==='kana'){kanaUnits=[];stopKanaMic();try{speechSynthesis.cancel()}catch(e){}}if(screen==='tracing'&&traceLevel<=3){show('traceMenu');return}oldBack()};
 $('back').onclick=()=>goBack();
-window.addEventListener('pagehide',()=>{kanaUnits=[];recognition?.stop()});
+window.addEventListener('pagehide',()=>{kanaUnits=[];stopKanaMic()});
 renderColors();exOpen().then(d=>{exdb=d;refreshExtra()}).catch(()=>{renderColors();console.warn('画像登録は利用できませんが、ぬりえは遊べます')});
 
 /* Shared short button tap sound, independent of speech playback. */
