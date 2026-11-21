@@ -47,14 +47,63 @@ function drawPaintSegment(a,b,pressure=0.5,pen=false){
  px.beginPath();px.moveTo(a.x,a.y);px.lineTo(b.x,b.y);px.stroke();
  px.restore();
 }
-function bucket(x,y){if(!outlineData)return;const w=600,h=600,start=Math.floor(y)*w+Math.floor(x);const blocked=new Uint8Array(w*h);for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){const i=yy*w+xx,k=i*4;const v=(outlineData[k]+outlineData[k+1]+outlineData[k+2])/3;if(v<128)blocked[i]=1}
-// Expand dark strokes to seal minor gaps before flood filling.
-const solid=blocked.slice();for(let yy=2;yy<h-2;yy++)for(let xx=2;xx<w-2;xx++){const i=yy*w+xx;if(!blocked[i])continue;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)solid[i+dy*w+dx]=1}
-if(solid[start])return;const seen=new Uint8Array(w*h),stack=new Int32Array(w*h);let top=0;stack[top++]=start;seen[start]=1;const ids=[];while(top){const i=stack[--top];ids.push(i);const x=i%w,y=(i/w)|0;for(const n of [x>0?i-1:-1,x<w-1?i+1:-1,y>0?i-w:-1,y<h-1?i+w:-1])if(n>=0&&!seen[n]&&!solid[n]){seen[n]=1;stack[top++]=n}}
-// Extend the filled region by 3 pixels under the black outline, without crossing the sealed boundary.
-const filled=new Uint8Array(w*h);for(const i of ids)filled[i]=1;
-const expanded=ids.slice();for(const i of ids){const xx=i%w,yy=(i/w)|0;for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){if(dx*dx+dy*dy>9)continue;const nx=xx+dx,ny=yy+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;const j=ny*w+nx;if(!filled[j]){filled[j]=1;expanded.push(j)}}}
-const d=px.getImageData(0,0,w,h),rgb=hexRgb(paintColor);for(const i of expanded){const k=i*4;d.data[k]=rgb[0];d.data[k+1]=rgb[1];d.data[k+2]=rgb[2];d.data[k+3]=255}px.putImageData(d,0,0);paintRender()}
+function bucket(x,y){
+ if(!outlineData)return;
+ const w=600,h=600,N=w*h,sx=Math.max(0,Math.min(599,Math.floor(x))),sy=Math.max(0,Math.min(599,Math.floor(y))),start=sy*w+sx;
+ const source=px.getImageData(0,0,w,h),p=source.data,blocked=new Uint8Array(N);
+ // Original artwork lines remain permanent barriers.
+ for(let i=0;i<N;i++){
+  const k=i*4;
+  if((outlineData[k]+outlineData[k+1]+outlineData[k+2])/3<128)blocked[i]=1;
+ }
+ // Seal small gaps in the original drawing, preserving the old bucket behaviour.
+ const solid=blocked.slice();
+ for(let yy=2;yy<h-2;yy++)for(let xx=2;xx<w-2;xx++){
+  const i=yy*w+xx;if(!blocked[i])continue;
+  for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)solid[i+dy*w+dx]=1;
+ }
+ const sk=start*4,targetAlpha=p[sk+3],rgb=hexRgb(paintColor);
+ if(solid[start])return;
+ // Compare against the existing color layer as well as the original outline.
+ // In particular, a newly drawn closed pen line now forms a fill boundary.
+ const unpainted=targetAlpha<35;
+ const canFill=i=>{
+  if(solid[i])return false;
+  const k=i*4,a=p[k+3];
+  if(unpainted)return a<35;
+  if(a<35||Math.abs(a-targetAlpha)>42)return false;
+  return Math.abs(p[k]-p[sk])<=38&&Math.abs(p[k+1]-p[sk+1])<=38&&Math.abs(p[k+2]-p[sk+2])<=38;
+ };
+ const seen=new Uint8Array(N),stack=new Int32Array(N),ids=[];
+ let top=0;stack[top++]=start;seen[start]=1;
+ while(top){
+  const i=stack[--top];ids.push(i);
+  const xx=i%w,yy=(i/w)|0;
+  const neighbors=[xx>0?i-1:-1,xx<w-1?i+1:-1,yy>0?i-w:-1,yy<h-1?i+w:-1];
+  for(const j of neighbors)if(j>=0&&!seen[j]&&canFill(j)){seen[j]=1;stack[top++]=j}
+ }
+ // Expand only into previously empty pixels near the source outline.
+ // Never paint over an existing colored region or a hand-drawn divider.
+ if(unpainted){
+  const original=ids.length;
+  for(let z=0;z<original;z++){
+   const i=ids[z],xx=i%w,yy=(i/w)|0;
+   for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
+    if(dx*dx+dy*dy>4)continue;
+    const nx=xx+dx,ny=yy+dy;
+    if(nx<0||ny<0||nx>=w||ny>=h)continue;
+    const j=ny*w+nx;
+    if(seen[j]||blocked[j]||p[j*4+3]>=35)continue;
+    seen[j]=1;ids.push(j);
+   }
+  }
+ }
+ for(const i of ids){
+  const k=i*4;
+  p[k]=rgb[0];p[k+1]=rgb[1];p[k+2]=rgb[2];p[k+3]=255;
+ }
+ px.putImageData(source,0,0);paintRender();
+}
 paint.addEventListener('pointerdown',e=>{if(painting)return;e.preventDefault();paint.setPointerCapture(e.pointerId);painting=true;paintPointer=e.pointerId;const p=pointOnCanvas(e,paint);snapshot();if(paintTool==='pen'||paintTool==='eraser'){drawPaintSegment(p,{x:p.x+.12,y:p.y+.12},e.pressure,e.pointerType==='pen');paintRender()}if(paintTool==='bucket'){bucket(p.x,p.y);painting=false;paintPointer=null;return}lastPaint=p;drawPaintSegment(p,p,e.pressure,e.pointerType==='pen');paintRender()});
 paint.addEventListener('pointermove',e=>{if(!painting||e.pointerId!==paintPointer||!lastPaint)return;e.preventDefault();const events=typeof e.getCoalescedEvents==='function'?e.getCoalescedEvents():[e];for(const ev of events){const p=pointOnCanvas(ev,paint);if(Math.hypot(p.x-lastPaint.x,p.y-lastPaint.y)<.2)continue;drawPaintSegment(lastPaint,p,ev.pressure,ev.pointerType==='pen');lastPaint=p}paintRender()});
 ['pointerup','pointercancel','lostpointercapture'].forEach(t=>paint.addEventListener(t,e=>{if(e.pointerId===paintPointer){painting=false;lastPaint=null;paintPointer=null;paintRender()}}));
