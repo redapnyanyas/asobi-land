@@ -257,3 +257,298 @@ main>#coloring:not(.hidden){display:block!important;overflow:auto!important}
 #kana .kana-grid button.quiz-correct{background:#8bdc9c!important;color:#155b2f!important;outline:3px solid #259c49}
 #kana .kana-grid button.quiz-wrong{background:#ffb0a9!important;outline:3px solid #df5047}
 @media(max-width:650px){#kana .kana-switch{flex-wrap:wrap;justify-content:center}#kana .kana-quiz-prompt{gap:5px;padding:3px}#kanaQuiz{padding:5px 7px}}
+
+/* Restored Nov 10 puzzle layouts and slide puzzle styling. */
+/* Test-only layout repair: scope each screen rather than applying global flex rules. */
+main>#gallery:not(.hidden),main>#colorGallery:not(.hidden),main>#traceGallery:not(.hidden),
+main>#parent:not(.hidden),main>#colorParent:not(.hidden),main>#traceParent:not(.hidden){display:block!important;overflow-y:auto!important;overflow-x:hidden!important}
+#parent .add-btn,#colorParent .add-btn,#traceParent .add-btn{display:inline-flex!important;position:static!important;align-items:center!important;justify-content:center!important;align-self:flex-start!important;flex:0 0 auto!important;width:auto!important;max-width:calc(100% - 12px)!important;height:auto!important;min-height:44px!important;max-height:64px!important;padding:11px 18px!important;line-height:1.3!important;white-space:normal!important;vertical-align:top!important;margin:8px 0 16px!important}
+main>#difficulty:not(.hidden){display:block!important;overflow:auto!important;width:100%!important}
+#difficulty .difficulty-wrap{box-sizing:border-box!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;max-width:100%!important;margin:0 auto!important;padding:clamp(8px,3vh,28px)!important;text-align:center!important}
+#difficulty .difficulty-options{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;align-items:stretch!important;justify-items:stretch!important;width:min(100%,850px)!important;margin:0 auto!important;gap:clamp(8px,2vw,20px)!important;flex-wrap:nowrap!important}
+#difficulty .difficulty-btn{width:100%!important;min-width:0!important;min-height:clamp(95px,22vh,175px)!important;box-sizing:border-box!important}
+main>#game:not(.hidden){display:block!important;overflow:auto!important}
+#game .play-layout{box-sizing:border-box!important;display:grid!important;grid-template-columns:minmax(100px,27%) minmax(0,1fr)!important;gap:clamp(6px,2vw,16px)!important;width:100%!important;height:100%!important;max-width:1150px!important;margin:0 auto!important;align-items:start!important}
+#game .game-area{display:flex!important;flex-direction:column!important;align-items:center!important;min-width:0!important;min-height:0!important;height:100%!important}
+#game .board{position:relative!important;display:block!important;flex:0 0 auto!important;width:min(100%,calc((100dvh - 110px)*.58),460px)!important;height:auto!important;aspect-ratio:1!important;max-height:none!important}
+#game .tray{position:relative!important;display:grid!important;width:100%!important;flex:1 1 0!important;min-height:0!important;max-height:none!important;overflow:hidden!important;grid-template-columns:repeat(var(--tray-cols,5),minmax(0,1fr))!important;grid-template-rows:repeat(var(--tray-rows,2),minmax(0,1fr))!important;gap:4px!important;justify-items:center!important;align-content:center!important}
+#game .tray .piece{width:auto!important;height:100%!important;max-width:100%!important;max-height:100%!important;aspect-ratio:1!important;min-height:0!important;min-width:0!important;object-fit:contain!important}
+@media(max-width:700px){#difficulty .difficulty-wrap{justify-content:center!important;padding:7px!important}#difficulty .difficulty-options{gap:5px!important}#difficulty .difficulty-btn{padding:4px!important;min-height:88px!important;font-size:25px!important;border-width:3px!important}#difficulty .difficulty-btn span{font-size:clamp(12px,3vw,18px)!important}#difficulty .difficulty-btn small{font-size:clamp(10px,2.5vw,15px)!important}#game .play-layout{grid-template-columns:minmax(75px,24%) minmax(0,1fr)!important;gap:7px!important}#game .board{width:min(100%,calc((100dvh - 95px)*.55),360px)!important}}
+
+
+/* Keep build time visible at the bottom without overlapping home game controls. */
+#home .home-version{box-sizing:border-box!important;grid-column:1/-1!important;position:relative!important;display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;width:100%!important;max-width:100%!important;max-height:none!important;min-height:30px!important;overflow:visible!important;padding:5px 8px!important;margin:5px auto 0!important;gap:4px 9px!important;line-height:1.25!important;white-space:normal!important;text-align:center!important}
+#home .home-version span{display:inline-block!important;flex:0 0 auto!important;max-width:100%!important}
+#home .home-version button{flex:0 0 auto!important;min-height:30px!important;max-width:100%!important;padding:5px 9px!important}
+#home .home-version small{flex-basis:100%;line-height:1.3}
+@media(max-width:700px){#home .home-version{font-size:10px!important;gap:3px 6px!important;padding:4px!important}#home .home-version button{font-size:10px!important}}
+
+/* Touch-friendly behavior across the main あそびランド app. */
+html,body,#app,main,header,section,button,.game-tile,svg,img{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+img,svg{-webkit-user-drag:none;user-drag:none}
+input,textarea,select{user-select:text;-webkit-user-select:text}
+
+/* Kana-board microphone and keyboard accessibility */
+#kanaMic.listening{background:#f25e76!important;color:#fff!important;box-shadow:0 0 0 3px #ffb7c4;min-width:78px}
+#kanaGrid button:disabled,#kanaGrid button.kana-special:disabled,#kanaGrid button.kana-mark:disabled,
+#kanaSmall:disabled,#kanaLong:disabled{opacity:.22!important;filter:grayscale(.9)!important;cursor:default;box-shadow:none!important}
+#kanaGrid button:disabled:active,#kanaGrid button.kana-special:disabled:active{background:#ccc!important}
+.kana-dictation-link{text-align:center;margin:3px 0}
+#kanaDictationOpen{font-size:12px;padding:5px 11px;border-radius:14px;background:#f8e0b5}
+#kanaDictationWrap{background:#fff7df;border-radius:12px;padding:7px;position:relative;z-index:10}
+#kanaDictationWrap[hidden]{display:none!important}
+#kanaDictationWrap label{font-size:13px;font-weight:700}
+.kana-dictation-row{display:flex;gap:6px;margin-top:4px}
+#kanaDictation{min-width:0;flex:1;border:2px solid #e8ad79;border-radius:8px;font-size:16px;padding:7px;-webkit-user-select:text;user-select:text}
+#kanaDictationAdd{background:#ffcf6c;padding:7px 12px}
+#kanaStatus{min-height:18px;font-size:13px}
+
+
+/* Picture puzzle: exact 1:1 tile size, with the entire loose grid visible. */
+#game .game-area{--puzzle-piece-size:56px;--puzzle-board-size:232px;min-width:0;min-height:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;align-items:center!important}
+#game .board{box-sizing:border-box!important;flex:0 0 auto!important;width:var(--puzzle-board-size)!important;height:var(--puzzle-board-size)!important;aspect-ratio:1!important;max-width:100%!important;min-height:0!important}
+#game .tray{box-sizing:border-box!important;position:relative!important;flex:0 0 auto!important;display:grid!important;grid-template-columns:repeat(var(--tray-cols,5),var(--puzzle-piece-size))!important;grid-template-rows:repeat(var(--tray-rows,2),var(--puzzle-piece-size))!important;width:max-content!important;max-width:100%!important;height:max-content!important;min-height:0!important;max-height:none!important;overflow:visible!important;gap:0!important;padding:0!important;margin:8px auto 0!important;align-content:start!important;justify-items:stretch!important}
+#game .tray .slot{box-sizing:border-box!important;width:var(--puzzle-piece-size)!important;height:var(--puzzle-piece-size)!important;min-width:0!important;min-height:0!important;display:grid!important;place-items:center!important}
+#game .tray .piece{box-sizing:border-box!important;width:var(--puzzle-piece-size)!important;height:var(--puzzle-piece-size)!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;aspect-ratio:1!important;border-width:1px!important;border-radius:2px!important;flex:none!important}
+#game .cell{box-sizing:border-box!important;aspect-ratio:auto!important;min-width:0!important;min-height:0!important}
+#game #cells{width:100%!important;height:100%!important}
+#game .drag-piece{box-sizing:border-box!important;border-width:1px!important;border-radius:2px!important}
+
+/* Allow the picture puzzle on portrait devices without covering the board. */
+@media(orientation:portrait){#game:before{content:none!important;display:none!important}}
+
+/* Picture-puzzle board stays large; loose tiles may be smaller until lifted. */
+#game .tray{justify-content:center!important;margin-top:8px!important}
+#game .game-area{overflow:hidden!important}
+#game .drag-piece{will-change:left,top}
+@media (max-width:700px) and (orientation:portrait){
+ #game .play-layout{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:64px minmax(0,1fr)!important;gap:2px!important}
+ #game .reference{height:64px!important;display:flex!important;flex-direction:row!important;gap:10px!important;padding:0 8px!important;align-items:center!important;justify-content:flex-start!important;overflow:hidden!important}
+ #game .reference .tag{font-size:13px!important;margin:0!important;white-space:nowrap}
+ #game .reference img{width:58px!important;height:58px!important;max-width:58px!important;aspect-ratio:1!important;border-width:2px!important}
+ #game .game-area{grid-column:1!important;grid-row:2!important;width:100%!important;height:100%!important}
+}
+
+/* iPad: give the puzzle nearly all available height, with a separate side tray. */
+#game .game-area.puzzle-side{
+ display:grid!important;
+ grid-template-columns:var(--puzzle-board-size) minmax(0,1fr)!important;
+ grid-template-rows:28px minmax(0,1fr)!important;
+ column-gap:10px!important;
+ align-items:start!important;
+ justify-content:center!important;
+ align-content:start!important;
+}
+#game .game-area.puzzle-side>.tag{
+ grid-column:1!important;grid-row:1!important;
+ justify-self:center!important;align-self:center!important;
+ margin:0!important;
+}
+#game .game-area.puzzle-side>.board{
+ grid-column:1!important;grid-row:2!important;
+ justify-self:center!important;align-self:start!important;
+ margin:0!important;
+}
+#game .game-area.puzzle-side>.tray{
+ grid-column:2!important;grid-row:2!important;
+ align-self:center!important;justify-self:center!important;
+ margin:0 auto!important;
+ gap:1px!important;
+}
+
+
+/* Puzzle screen 2026-11-09: board-first sizing, no large unused margins. */
+main>#game:not(.hidden){
+ height:100%!important;
+ min-height:0!important;
+ overflow:hidden!important;
+ padding:2px 4px 3px!important;
+}
+#game .play-layout{
+ max-width:none!important;
+ width:100%!important;
+ height:100%!important;
+ grid-template-columns:minmax(72px,12%) minmax(0,1fr)!important;
+ grid-template-rows:minmax(0,1fr)!important;
+ gap:5px!important;
+ align-items:stretch!important;
+}
+#game .reference{
+ padding:4px 0!important;
+ min-width:0!important;
+ justify-content:flex-start!important;
+}
+#game .reference img{
+ max-width:100%!important;
+ width:min(100%,120px)!important;
+ border-width:2px!important;
+}
+#game .game-area{
+ width:100%!important;
+ height:100%!important;
+ max-width:none!important;
+ min-height:0!important;
+ padding:0!important;
+ margin:0!important;
+ align-items:center!important;
+ justify-content:flex-start!important;
+ overflow:hidden!important;
+}
+#game .game-area>.tag{flex:0 0 auto!important;margin:0 0 4px!important;line-height:24px!important}
+#game .game-area>.board{
+ max-width:none!important;
+ max-height:none!important;
+ flex:0 0 auto!important;
+ width:var(--puzzle-board-size)!important;
+ height:var(--puzzle-board-size)!important;
+ margin:0!important;
+ border-width:3px!important;
+}
+#game .game-area>.tray{
+ flex:0 0 auto!important;
+ width:max-content!important;
+ max-width:100%!important;
+ height:max-content!important;
+ min-height:0!important;
+ max-height:none!important;
+ grid-template-columns:repeat(var(--tray-cols,5),var(--puzzle-piece-size))!important;
+ grid-template-rows:repeat(var(--tray-rows,2),var(--puzzle-piece-size))!important;
+ overflow:visible!important;
+ padding:0!important;
+ margin:4px auto 0!important;
+ gap:0!important;
+}
+#game .game-area.puzzle-side{
+ display:grid!important;
+ grid-template-columns:var(--puzzle-board-size) minmax(0,1fr)!important;
+ grid-template-rows:27px minmax(0,1fr)!important;
+ column-gap:6px!important;
+ justify-content:center!important;
+ align-content:start!important;
+ align-items:start!important;
+}
+#game .game-area.puzzle-side>.tag{grid-column:1!important;grid-row:1!important;margin:0!important}
+#game .game-area.puzzle-side>.board{grid-column:1!important;grid-row:2!important}
+#game .game-area.puzzle-side>.tray{grid-column:2!important;grid-row:2!important;align-self:center!important;justify-self:center!important;margin:0!important}
+@media(orientation:portrait){
+ #game .play-layout{
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:44px minmax(0,1fr)!important;
+  gap:2px!important;
+ }
+ #game .reference{
+  grid-column:1!important;
+  grid-row:1!important;
+  height:44px!important;
+  display:flex!important;
+  flex-direction:row!important;
+  gap:7px!important;
+  padding:0 4px!important;
+  align-items:center!important;
+ }
+ #game .reference img{width:40px!important;height:40px!important;max-width:40px!important;max-height:40px!important;object-fit:contain!important}
+ #game .reference .tag{font-size:12px!important;margin:0!important;white-space:nowrap!important}
+ #game .game-area{grid-column:1!important;grid-row:2!important}
+}
+@media(max-width:700px) and (orientation:landscape){
+ #game .play-layout{grid-template-columns:60px minmax(0,1fr)!important}
+ #game .reference img{width:55px!important;max-width:55px!important}
+}
+/* Inactive kana keys all share one appearance, including marks and small/long characters. */
+#kana .kana-grid button:disabled,
+#kana .kana-grid button.kana-special:disabled,
+#kana .kana-grid button.kana-mark:disabled,
+#kana #kanaSmall:disabled,
+#kana #kanaLong:disabled{
+ background:#ece8df!important;
+ color:#9c9891!important;
+ border:3px solid #f5f1eb!important;
+ opacity:.40!important;
+ filter:none!important;
+ box-shadow:none!important;
+ outline:0!important;
+ text-shadow:none!important;
+}
+#kana .kana-grid button:disabled:active,
+#kana .kana-grid button.kana-special:disabled:active,
+#kana .kana-grid button.kana-mark:disabled:active{
+ background:#ece8df!important;color:#9c9891!important;
+}
+
+
+/* Override legacy "always pastel even disabled" styles (v9/v11). */
+#kana #kanaGrid button:disabled,
+#kana #kanaGrid button.kana-special:disabled,
+#kana #kanaGrid button.kana-special:not(.kana-mark):disabled,
+#kana #kanaGrid button.kana-mark:disabled{
+ background:#ece8df!important;
+ color:#9c9891!important;
+ border:3px solid #f5f1eb!important;
+ opacity:.40!important;
+ filter:none!important;
+ box-shadow:none!important;
+}
+
+/* Two clearly distinct difficulty groups on the same picture. */
+#difficulty .difficulty-wrap{max-width:1080px!important;margin:0 auto!important;padding:6px!important;height:100%!important;overflow-y:auto!important;display:flex!important;flex-direction:column!important;gap:10px!important}
+#difficulty .difficulty-wrap>h2{margin:4px 0!important;font-size:clamp(17px,2.4vw,25px)!important;text-align:center!important}
+#difficulty .puzzle-mode-block{padding:9px!important;border:3px solid #f4d5a0;border-radius:19px;background:#fff7e8}
+#difficulty .puzzle-mode-block h3{font-size:clamp(17px,2.8vw,25px);margin:0 0 7px;text-align:center}
+#difficulty .puzzle-mode-block.slide-mode{background:#d9f3ff!important;border-color:#71b2ed!important}
+#difficulty .slide-mode h3{color:#205b97}
+#difficulty .difficulty-options{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important}
+#difficulty .difficulty-options .difficulty-btn{min-width:0!important;width:100%!important;min-height:clamp(78px,14vh,120px)!important;display:flex!important;flex-direction:column!important;gap:2px!important;align-items:center!important;justify-content:center!important;font-size:clamp(22px,4vw,32px)!important}
+#difficulty .difficulty-options .difficulty-btn span{font-size:clamp(13px,2vw,20px)!important}
+#difficulty .difficulty-options .difficulty-btn small{font-size:clamp(10px,1.5vw,15px)!important}
+#difficulty .slide-mode .difficulty-btn{background:#89d3f5!important;color:#164973!important;border-color:#55a4d2!important}
+#difficulty .slide-mode .difficulty-btn:active{background:#4db5e6!important}
+@media(max-width:430px){#difficulty .difficulty-wrap{gap:6px!important}#difficulty .puzzle-mode-block{padding:6px!important}#difficulty .difficulty-options{gap:4px!important}#difficulty .difficulty-options .difficulty-btn{padding:4px 1px!important;min-height:74px!important}}
+/* Slide puzzle uses the whole board; the missing final tile is transparent. */
+#game.slide-game .tray{display:none!important}
+#game.slide-game .slide-info{display:block!important;font-weight:800;color:#356b98;font-size:clamp(12px,1.6vw,18px);text-align:center;margin-top:7px}
+#game.slide-game .board{background:#d8edfa!important;border-color:#4e91c8!important}
+#game.slide-game #cells{gap:0!important}
+#game.slide-game .slide-cell{border:1px solid #f8f9ff!important;border-radius:3px!important;padding:0!important;min-width:0!important;min-height:0!important;background-repeat:no-repeat;background-size:calc(var(--grid-size,3)*100%) calc(var(--grid-size,3)*100%);touch-action:manipulation;cursor:default;transition:none}
+#game.slide-game .slide-cell.slide-movable{cursor:pointer;box-shadow:inset 0 0 0 1px #fffc}
+#game.slide-game .slide-cell.slide-blank{background:none!important;background-color:#a2c9e3!important;border:2px dashed #d6eafb!important;cursor:default}
+#game.slide-game .board.slide-hint .slide-movable{box-shadow:inset 0 0 0 4px #ffe26a!important}
+
+/* Physical sliding motion: only the neighbor of the blank can move. */
+#game.slide-game .slide-cell{touch-action:none!important;-webkit-user-select:none!important;user-select:none!important}
+#game.slide-game .slide-cell.slide-movable{cursor:grab;position:relative;z-index:1}
+#game.slide-game .slide-cell.slide-moving{cursor:grabbing;z-index:4;box-shadow:0 4px 12px #35678a55!important}
+#game.slide-game .slide-cell.slide-ready{box-shadow:0 4px 13px #35678a77!important}
+
+/* Beginner sliding puzzle: 4 complete picture pieces and one spare cell.
+   0 1 [blank] / 2 3 [unused] — extra space above/right of the picture. */
+#game.slide-game.slide-five .board{
+ aspect-ratio:3/2!important;
+ width:var(--puzzle-board-size)!important;
+ height:calc(var(--puzzle-board-size) * 2 / 3)!important;
+ overflow:visible!important;
+ background:transparent!important;
+ border:0!important;
+ border-radius:0!important;
+}
+#game.slide-five #cells{
+ position:absolute!important;inset:0!important;
+ display:grid!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ grid-template-rows:repeat(2,minmax(0,1fr))!important;
+ width:100%!important;height:100%!important;
+ gap:0!important;
+}
+#game.slide-five .slide-cell{
+ background-size:200% 200%!important;
+ border:2px solid #f8f9ff!important;
+ box-shadow:inset 0 0 0 1px #ffffffaa;
+ border-radius:5px!important;
+}
+#game.slide-five .slide-cell.slide-blank{
+ background-color:#add3e8!important;
+ border:3px dashed #488bc0!important;
+}
+#game.slide-five .slide-unused{pointer-events:none;visibility:hidden;}
+#game.slide-five .slide-info{margin-top:12px!important}
+#game.slide-game #hint{touch-action:manipulation}
+
